@@ -33,7 +33,7 @@ Tom's RPI Zero W Weather Station
 - Required libraries:  os, glob, time, math, statistics
 - Also: GPIOZERO
 - Also: BME680 library (I use the [pimoroni lib](https://github.com/pimoroni/bme680-python))
-- Also: (Optional) - my [weather_api])(https://github.com/tomludlow2/weather_api)
+- Also: (Optional) - my [weather_api](https://github.com/tomludlow2/weather_api)
 
 ## Usage (Python Class):
 ### Import and Inititate

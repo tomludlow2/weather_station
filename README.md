@@ -78,7 +78,7 @@ Specify **True or False** for if you want to turn on the gas mode or not
 - There are some assumptions for the calculation of windspeed, these are based on the equipement
 - This example uses an anemoneter with reed switches, hence the need for:
 - ```CLICKS_PER_ROTATION=2    CIRCUMFERENCE_CM=9.0,   CORRECTION_FACTOR```
-- **CORRECTION_FACTOR** is calculated based on the fact there is some internal resistance in the sytem - see the Raspberry Pi Guide for more information
+- ```CORRECTION_FACTOR``` is calculated based on the fact there is some internal resistance in the sytem - see the Raspberry Pi Guide for more information
 - To Reset the Wind Count, you can call ```reset_wind()``` - but note you will lose the readings stored at that point
 
 
@@ -94,7 +94,7 @@ Specify **True or False** for if you want to turn on the gas mode or not
 - This function will:
 - - Print out:  **Temperature** (Celsius), **Humidity** (Rel%) and **Pressure** (hPa)
 - - If gas mode is on, it will then Take a reading every second until the difference between the last readings is within 1% and print these
-- - Return a list of ```{temperature, humidity, pressure, resistance}```
+- - Return a dictionary of ```{temperature, humidity, pressure, (resistance)}```
 
 #### Wind Direction
 - This sensor seems the most difficult to interpret

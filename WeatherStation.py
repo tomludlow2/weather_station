@@ -5,6 +5,7 @@ import math
 from gpiozero import Button
 from gpiozero import MCP3008
 from gpiozero import LED
+import bme680 as bme
 
 
 os.system('modprobe w1-gpio')
@@ -115,15 +116,15 @@ class WeatherStation:
         if( reset == True):
             self.reset_wind()
 
+        interval_speed_kmh = interval_speed_cm * 60 * 60 /100 /1000
+        interval_speed_mph = interval_speed_kmh * 5 / 8
+        interval_speed_knots = interval_speed_mph / 1.151
         #Now convert to units
-        if( units == "kmh"):
-            interval_speed_kmh = interval_speed_cm * 60 * 60 /100 /1000
+        if( units == "kmh"):            
             return_speed = interval_speed_kmh
-        elif( units == "mph"):
-            interval_speed_mph = interval_speed_kmh * 5 / 8
+        elif( units == "mph"):            
             return_speed = interval_speed_mph
-        elif( units == "knots"):
-            interval_speed_knots = interval_speed_mph / 1.151
+        elif( units == "knots"):            
             return_speed = interval_speed_knots
         elif( units == "cms" ):
             return_speed = interval_speed_cm
@@ -236,3 +237,68 @@ class WeatherStation:
         self.yellow_led.off()
         self.green_led.off()
         self.white_led.off()
+
+    def init_bme_sensor(self, gas_mode = False):
+        bme_sensor = bme.BME680()
+        bme_sensor.set_humidity_oversample(bme.OS_2X)
+        bme_sensor.set_pressure_oversample(bme.OS_4X)
+        bme_sensor.set_temperature_oversample(bme.OS_8X)
+        bme_sensor.set_filter(bme.FILTER_SIZE_3)
+
+        if( gas_mode == False):
+            print("Info: Gas mode disabled")
+            bme_sensor.set_gas_status(bme.DISABLE_GAS_MEAS)
+            self.bme_gas_mode_on = False
+        elif( gas_mode == True):
+            bme_sensor.set_gas_status(bme.ENABLE_GAS_MEAS)
+            bme_sensor.set_gas_heater_temperature(320)
+            bme_sensor.set_gas_heater_duration(150)
+            bme_sensor.select_gas_heater_profile(0)
+            self.bme_gas_mode_on = True
+
+        self.bme_sensor = bme_sensor
+
+    def bme_sensor_modify_gas(self, gas_mode):
+        if( gas_mode == False):
+            self.bme_sensor.set_gas_status(bme.DISABLE_GAS_MEAS)
+            self.bme_gas_mode_on = False
+        elif( gas_mode == True):
+            self.bme_sensor.set_gas_status(bme.ENABLE_GAS_MEAS)
+            self.bme_gas_mode_on = True
+
+    def read_bme_sensor(self):
+        bme_sensor = self.bme_sensor
+        i = 0
+        output = {}
+        while( i < 1 ):
+            print("Collecting BME680 Data")
+            if( bme_sensor.get_sensor_data() ):
+                temperature = bme_sensor.data.temperature
+                humidity = bme_sensor.data.humidity
+                pressure = bme_sensor.data.pressure
+                print("Temp:\t" + str(temperature) + "\tHumidity:\t" + str(humidity) + "\tPressure:\t" + str(pressure))
+                print("Collecting gas resistance values - may take a few minutes")
+                output = {
+                    "temperature": temperature,
+                    "humidity" : humidity,
+                    "pressure": pressure
+                }
+                if( self.bme_gas_mode_on ):
+                    last_resistance = 0
+                    current_resistance = bme_sensor.data.gas_resistance
+                    difference_proportion = 100
+                    while(((difference_proportion > 1) or (difference_proportion < -1)) and (difference_proportion != 0.0)):
+                        if( bme_sensor.get_sensor_data() ):
+                            last_resistance = current_resistance
+                            current_resistance = bme_sensor.data.gas_resistance
+                            difference_proportion = (current_resistance - last_resistance) / last_resistance * 100
+                            print("Last:\t" + str(round(last_resistance)) + "\tCurrent:\t" + str(round(current_resistance)) + "\tDifference:\t" + str(difference_proportion) + "%")
+                            time.sleep(1)
+                        else:
+                            time.sleep(1)
+                    print("Final resistance:\t" + str(current_resistance))
+                    output['resistance'] = current_resistance
+                i = 1
+            else:
+                time.sleep(1)
+        return output

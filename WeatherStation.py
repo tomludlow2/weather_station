@@ -97,19 +97,21 @@ class WeatherStation:
             #temp_f = temp_c * 9.0 / 5.0 + 32.0
             return temp_c
 
-    def read_wind(self, units="kmh", reset=False):
+    def read_wind(self, units="kmh", reset=False, quiet=False):
         #Assuming that the tick_wind listener is running:
         #time_now gets a current time
         #time_diff gets the difference between the time wind count was reset and now
-        print("Reading Wind Speed")
+        if( quiet == False):
+            print("Reading Wind Speed")
         time_now = time.time()
         time_diff = time_now - self.wind_started
         ticks = self.wind_count
-        print("Ticks:\t" + str(ticks) + "\tTime:\t" + str(round(time_diff,2) ) )
+        if( quiet == False):
+            print("Ticks:\t" + str(ticks) + "\tTime:\t" + str(round(time_diff,2) ) )
         global CIRCUMFERENCE_CM, CLICKS_PER_ROTATION, CORRECTION_FACTOR
         interval_distance_moved_cm = ticks / CLICKS_PER_ROTATION * CIRCUMFERENCE_CM
         interval_speed_cm = CORRECTION_FACTOR * interval_distance_moved_cm / time_diff
-        print("Interval Speed " + str(interval_speed_cm) + " cm.seconds-1")
+        
 
         return_speed = interval_speed_cm
 
@@ -122,15 +124,24 @@ class WeatherStation:
         #Now convert to units
         if( units == "kmh"):            
             return_speed = interval_speed_kmh
+            if( quiet == False):
+                print("Interval Speed " + str(interval_speed_kmh) + " km.h-1")
         elif( units == "mph"):            
             return_speed = interval_speed_mph
+            if( quiet == False):
+                print("Interval Speed " + str(interval_speed_mph) + " mph")
         elif( units == "knots"):            
             return_speed = interval_speed_knots
+            if( quiet == False):
+                print("Interval Speed " + str(interval_speed_knots) + " knots")
         elif( units == "cms" ):
             return_speed = interval_speed_cm
+            if( quiet == False):
+                print("Interval Speed " + str(interval_speed_cm) + " cm.seconds-1")
         else:
             return_speed = 0
-            print("You supplied an invalid units value:  cms, kmh, mph, knots are accepted values")
+            if( quiet == False):
+                print("You supplied an invalid units value:  cms, kmh, mph, knots are accepted values")
         return return_speed
 
     def tick_wind(self):
@@ -168,7 +179,7 @@ class WeatherStation:
         if( WIND_ANGLES_DICT.get(reading)):
             angle = WIND_ANGLES_DICT[reading]
             print("Angle:\t" + str(angle) + "deg")
-            return True
+            return angle
         else:
             return False
 
@@ -250,6 +261,7 @@ class WeatherStation:
             bme_sensor.set_gas_status(bme.DISABLE_GAS_MEAS)
             self.bme_gas_mode_on = False
         elif( gas_mode == True):
+            print("Info: Gas mode enabled")
             bme_sensor.set_gas_status(bme.ENABLE_GAS_MEAS)
             bme_sensor.set_gas_heater_temperature(320)
             bme_sensor.set_gas_heater_duration(150)
@@ -260,24 +272,31 @@ class WeatherStation:
 
     def bme_sensor_modify_gas(self, gas_mode):
         if( gas_mode == False):
+            print("Info: Gas mode disabled")
             self.bme_sensor.set_gas_status(bme.DISABLE_GAS_MEAS)
             self.bme_gas_mode_on = False
         elif( gas_mode == True):
+            print("Info: Gas mode enabled")
             self.bme_sensor.set_gas_status(bme.ENABLE_GAS_MEAS)
+            self.bme_sensor.set_gas_heater_temperature(320)
+            self.bme_sensor.set_gas_heater_duration(150)
+            self.bme_sensor.select_gas_heater_profile(0)
             self.bme_gas_mode_on = True
 
-    def read_bme_sensor(self):
+    def read_bme_sensor(self, quiet=False):
         bme_sensor = self.bme_sensor
         i = 0
         output = {}
         while( i < 1 ):
-            print("Collecting BME680 Data")
+            if( quiet == True):
+                print("Collecting BME680 Data")
             if( bme_sensor.get_sensor_data() ):
                 temperature = bme_sensor.data.temperature
                 humidity = bme_sensor.data.humidity
                 pressure = bme_sensor.data.pressure
-                print("Temp:\t" + str(temperature) + "\tHumidity:\t" + str(humidity) + "\tPressure:\t" + str(pressure))
-                print("Collecting gas resistance values - may take a few minutes")
+                if( quiet == True):
+                    print("Temp:\t" + str(temperature) + "\tHumidity:\t" + str(humidity) + "\tPressure:\t" + str(pressure))
+                    print("Collecting gas resistance values - may take a few minutes")
                 output = {
                     "temperature": temperature,
                     "humidity" : humidity,
@@ -287,18 +306,40 @@ class WeatherStation:
                     last_resistance = 0
                     current_resistance = bme_sensor.data.gas_resistance
                     difference_proportion = 100
-                    while(((difference_proportion > 1) or (difference_proportion < -1)) and (difference_proportion != 0.0)):
+                    proceed = 0
+                    while( proceed < 1):
+                        #print("\nP1\tdifference_proportion = " + str(difference_proportion))
                         if( bme_sensor.get_sensor_data() ):
                             last_resistance = current_resistance
                             current_resistance = bme_sensor.data.gas_resistance
                             difference_proportion = (current_resistance - last_resistance) / last_resistance * 100
-                            print("Last:\t" + str(round(last_resistance)) + "\tCurrent:\t" + str(round(current_resistance)) + "\tDifference:\t" + str(difference_proportion) + "%")
+                            if( quiet == True):
+                                print("Last:\t" + str(round(last_resistance)) + "\tCurrent:\t" + str(round(current_resistance)) + "\tDifference:\t" + str(difference_proportion) + "%")
                             time.sleep(1)
                         else:
                             time.sleep(1)
-                    print("Final resistance:\t" + str(current_resistance))
+                        #print("P2\tdifference_proportion = " + str(difference_proportion) + "\n")
+
+                        if( difference_proportion != 0 ):
+                            if( difference_proportion < 1 ):
+                                if( difference_proportion > -1):
+                                    proceed = 1
+                        if( proceed == 0):
+                            if( quiet == False):
+                                print("Info: AQ Measurement not stable")                                          
+                    if( quiet == True):
+                        print("Final resistance:\t" + str(current_resistance))
                     output['resistance'] = current_resistance
                 i = 1
             else:
                 time.sleep(1)
         return output
+
+    def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        filledLength = int(length * iteration // total)
+        bar = fill * filledLength + '-' * (length - filledLength)
+        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+        # Print New Line on Complete
+        if iteration == total: 
+            print()

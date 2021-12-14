@@ -133,4 +133,4 @@ weather_data = collect_data_set(station0, False|True)
 - My [weather_api](https://github.com/tomludlow2/weather_api) allows you to submit and record the data to your database
 - Open the file ```weather_api_integration.py``` which demonstrates how to integrate a single set of readings
 - Note that this is a copy of the the function in ```weather_holder.py``` but without comments/prints
-
+- It also adds another argument ```countdown = 15``` which specifies how long you want to collect wind speed and weather data for in **seconds**

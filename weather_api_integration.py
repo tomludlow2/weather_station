@@ -3,11 +3,11 @@ import time, statistics, json, sys
 
 #Import the weather_api module
 import sys
-sys.path.append("..")
+sys.path.append("/home/pi")
 import weather_api.weather_api as api
 a = api.API()
 
-def collect_data_set(station, full_set = False):
+def collect_data_set(station, full_set = False, countdown=15):
 	reading = {
 		"time": time.time(),
 		"active": "test"
@@ -20,7 +20,6 @@ def collect_data_set(station, full_set = False):
 		reading = reading | bme_readings
 		station.bme_sensor_modify_gas(True)
 
-	countdown = 15
 	i = 0
 	wind_speeds = []
 	while( i < countdown ):
@@ -85,7 +84,7 @@ def process_data_dict(d):
 station = ws.WeatherStation()
 
 #Collect one set of data (This is for a single snapshot)
-data = collect_data_set(station, True)
+data = collect_data_set(station, True, (10*60))
 print( json.dumps(data, indent=3))
 
 #Now process the data

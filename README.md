@@ -35,7 +35,7 @@ Tom's RPI Zero W Weather Station
 - Also: BME680 library (I use the [pimoroni lib](https://github.com/pimoroni/bme680-python))
 - Also: (Optional) - my [weather_api](https://github.com/tomludlow2/weather_api)
 
-## Usage (Python Class):
+## Usage (WeatherStation Python Class):
 ### Import and Inititate
 - Import and create an instance of WeatherStation
 ```
@@ -81,7 +81,6 @@ Specify **True or False** for if you want to turn on the gas mode or not
 - ```CORRECTION_FACTOR``` is calculated based on the fact there is some internal resistance in the sytem - see the Raspberry Pi Guide for more information
 - To Reset the Wind Count, you can call ```reset_wind()``` - but note you will lose the readings stored at that point
 
-
 #### Deep Temperature
 - This is an **I2C** component
 - Reading is simple:  ```read_deep_temp()```
@@ -111,8 +110,25 @@ Specify **True or False** for if you want to turn on the gas mode or not
 - - It will then return a list of angles that were matched during those counts e.g. ```[0,22.5,22.5,67.5,180,67.5...]``` 
 - - **Note** that the number of values is unlikely to be your **count** as not all ADC values convert to a direction
 
-
 #### Blink LED
 - This just allows you to blink the LEDs on the side of the smaller enclosure
 - ```blink_led(count, led(all|green|white|yellow))```
 - On/Off Blinking of relevant LEDs x **count** x 0.4 secs on|off
+
+
+## Usage (weather_holder.py)
+- This function gives you an example of how the class can be implemented:
+- It includes a function called ```collect_data_set(station, full_set)```
+- This will return, on successful completion, a dict of the values the weather station can produce
+- Usage is simple:
+```
+import WeatherStation as ws
+station = ws.WeatherStation()
+weather_data = collect_data_set(station0, False|True)
+```
+- False|True refers to whether or not you want to turn on the air quality measurement or not (this takes significantly longer)
+- Running this on the command line will collect the data and show you some progress bars for parts of it
+
+## Usage with WeatherAPI
+- My [weather_api](https://github.com/tomludlow2/weather_api) allows you to submit and record the data to your database
+- 
